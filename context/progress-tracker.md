@@ -3,12 +3,26 @@
 Update this file whenever the current phase, active feature, or implementation state changes.
 
 ## Current Phase
-- Feature 02 (Editor Chrome) — complete
+- Feature 03 (Sign-in UI refinement) — complete
 
 ## Current Goal
-- Feature 02 is complete; ready for Feature 03.
+- The sign-in card outline and compact OAuth labels match the approved reference.
 
 ## Completed
+
+- Sign-in card polish: Added a light `--text-primary` outline to the rounded black sign-in card and removed its shadow. The two OAuth buttons remain side by side with GitHub left and Google right, while their visible labels are now exactly "GitHub" and "Google" instead of Clerk's longer "Continue with" text. Only the sign-in component was changed. ESLint, TypeScript, production build, and rendered appearance-prop checks pass.
+
+- Sign-in-only Clerk refinement: The sign-in card and footer now use the base dark background instead of the lighter surface color; GitHub and Google render side by side with GitHub ordered left and Google right; and the "Don't have an account?" footer action has a visible token-based bottom border separating it from the secured-by-Clerk area. The overrides live only on the `/sign-in` `<SignIn />` component, leaving sign-up and shared auth components unchanged. ESLint, TypeScript, production build, and rendered appearance-prop checks pass.
+
+- Auth UI refinement: Updated the shared sign-in/sign-up shell to a true large-screen 50/50 layout inspired by the approved reference. The left half now uses the elevated surface token, cyan brand rail and logo, compact product statement, icon-led feature list, and restrained footer; the right half keeps the Clerk form centered on the base background. Geist Sans is explicitly applied to the document and Clerk text/buttons, with Geist Mono assigned to Clerk mono content. No gradients, hardcoded colors, or Clerk flow rewrites were introduced. ESLint, TypeScript, production build, and live `/sign-in` and `/sign-up` markup checks pass.
+
+- Clerk CLI authentication setup: Clerk CLI 1.5.0 installed and authenticated, project linked to the Ghost AI Clerk app `app_3FUUR6Snn1mzSHXtv05ehTKmuz4`, and its development keys pulled into the ignored `.env.local`. `@clerk/nextjs` and `@clerk/ui` installed; ClerkProvider uses Clerk's dark theme with CSS-variable appearance overrides inside `<body>`; sign-in and sign-up are the only public app routes and are resolved from the existing Clerk env vars; `/` and `/editor` redirect unauthenticated users to sign-in; EditorNavbar shows UserButton; and the proxy matcher includes `/__clerk/:path*` once after the API/TRPC matcher. Clerk doctor, ESLint, TypeScript, production build, and runtime route behavior verified.
+
+- Maintenance: Corrected Tabs orientation Tailwind variants to target Base UI's `data-orientation="horizontal|vertical"` attributes, restoring orientation-specific layout and indicator styles.
+
+- Maintenance: Forwarded the Tabs wrapper's orientation prop to Base UI's Tabs Root so vertical tabs use the primitive's intended keyboard navigation behavior.
+
+- Maintenance: Corrected the ScrollArea scrollbar Tailwind data-attribute variants to target Base UI's `data-orientation="horizontal|vertical"` values, restoring orientation-specific sizing and border styles.
 
 - Feature 01: Design System — shadcn/ui installed and configured for Tailwind v4 with the Base Nova style, dark-only project and semantic theme tokens defined in globals.css, Button/Card/Dialog/Input/Tabs/Textarea/ScrollArea generated in components/ui/, lucide-react installed, and lib/utils.ts provides the reusable cn() helper. ESLint, TypeScript, production build, class merging, and emitted dark-theme CSS verified.
 - Feature 02: Editor Chrome — EditorNavbar (fixed-height top bar with left/center/right sections and PanelLeftOpen/PanelLeftClose toggle) and ProjectSidebar (fixed overlay that slides from the left without pushing the canvas, Projects header, My Projects/Shared tabs with empty states, and full-width New Project button) added to components/editor/. A minimal `/editor` route composes both through EditorShell so the chrome works end to end. Dialog title, description, and footer action primitives are ready via the existing token-based components/ui/dialog.tsx. TypeScript, ESLint, and production build clean.
@@ -63,10 +77,10 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Session Notes
 
-- Using Next.js 16.2.4 with React 19 and Tailwind CSS v4.
+- Using Next.js 16.2.9 with React 19 and Tailwind CSS v4.
 - shadcn version 4.5.0 was used; it auto-detected Tailwind v4.
 - lucide-react ^1.11.0 installed as a direct dependency.
-- @clerk/nextjs ^7.2.7 and @clerk/ui ^1.6.7 installed.
+- @clerk/nextjs ^7.5.7 and @clerk/ui ^1.20.0 installed.
 - @liveblocks/node installed alongside existing @liveblocks/client, @liveblocks/react, @liveblocks/react-flow, @liveblocks/react-ui. Liveblocks client uses lazy init (getLiveblocks()) to avoid key validation errors at build time.
 - @vercel/blob ^2.3.3 installed. BLOB_READ_WRITE_TOKEN set in .env.local.
 - @trigger.dev/sdk ^4.4.4 installed. trigger.config.ts reads project ref from TRIGGER_PROJECT_REF env var. TRIGGER_SECRET_KEY must be set in .env.local for triggering tasks from server code. Run `npx trigger.dev@latest dev` for local development; deploy with `npx trigger.dev@latest deploy`.

@@ -167,7 +167,18 @@ Two paths for development API keys:
 - Get keys from [dashboard.clerk.com](https://dashboard.clerk.com/~/api-keys) if Keyless doesn't trigger
 - **Publishable Key**: Starts with `pk_test_` or `pk_live_`
 - **Secret Key**: Starts with `sk_test_` or `sk_live_`
-- Set as environment variables: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+- Environment variable names are framework-specific. Follow the detected
+  framework's quickstart:
+  - Next.js: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+  - React or Vue with Vite: `VITE_CLERK_PUBLISHABLE_KEY` (client-only)
+  - Astro: `PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`
+  - Nuxt: `NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `NUXT_CLERK_SECRET_KEY`
+  - React Router framework mode: `VITE_CLERK_PUBLISHABLE_KEY` and
+    `CLERK_SECRET_KEY`
+  - TanStack Start, Express, or Fastify: `CLERK_PUBLISHABLE_KEY` and
+    `CLERK_SECRET_KEY`
+  - Expo: `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (client-only)
+- Never expose a secret key through a client-prefixed environment variable.
 
 ## Migrating from Another Auth Provider
 

@@ -2,6 +2,7 @@
 
 import { useOthers } from "@liveblocks/react/suspense"
 import { useReactFlow, useViewport } from "@xyflow/react"
+import { Loader2 } from "lucide-react"
 import type { CanvasEdge, CanvasNode } from "@/types/canvas"
 
 export function PresenceCursors() {
@@ -44,13 +45,16 @@ export function PresenceCursors() {
               />
             </svg>
             <span
-              className="ml-1 mt-4 max-w-40 truncate rounded-xl px-2 py-1 text-xs font-medium shadow-lg"
+              className="ml-1 mt-4 flex max-w-40 items-center gap-1.5 truncate rounded-xl px-2 py-1 text-xs font-medium shadow-lg"
               style={{
                 backgroundColor: color,
                 color: "var(--bg-base)",
               }}
             >
-              {name}
+              {other.presence.thinking ? (
+                <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+              ) : null}
+              <span className="truncate">{name}</span>
             </span>
           </div>
         )

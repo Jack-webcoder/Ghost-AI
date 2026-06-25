@@ -51,3 +51,8 @@ export interface CanvasEdgeData extends JsonObject {
 
 export type CanvasNode = Node<CanvasNodeData, "canvasNode">
 export type CanvasEdge = Edge<CanvasEdgeData, "canvasEdge">
+
+export interface CanvasSnapshot {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+}

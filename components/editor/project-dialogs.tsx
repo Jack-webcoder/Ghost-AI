@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import type { UseProjectActionsResult } from "@/hooks/use-project-actions"
+import  { UseProjectActionsResult } from "@/hooks/use-project-actions"
 
 interface ProjectDialogsProps {
   actions: UseProjectActionsResult

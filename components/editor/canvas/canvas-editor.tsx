@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, type DragEvent, type MouseEvent } from "react"
 import { LiveObject, type JsonObject } from "@liveblocks/client"
-import { useMutation, useUpdateMyPresence } from "@liveblocks/react/suspense"
+import {
+  useEventListener,
+  useMutation,
+  useUpdateMyPresence,
+} from "@liveblocks/react/suspense"
 import type { LiveblocksNode } from "@liveblocks/react-flow"
 import {
   addEdge,
@@ -28,12 +32,14 @@ import {
   ShapePanel,
   type ShapeDragPayload,
 } from "@/components/editor/canvas/shape-panel"
+import { useCanvasAutosave, type CanvasSaveStatus } from "@/hooks/use-canvas-autosave"
 import {
   DEFAULT_NODE_COLOR,
   DEFAULT_NODE_TEXT_COLOR,
   NODE_SHAPES,
   type CanvasEdge,
   type CanvasNode,
+  type CanvasSnapshot,
 } from "@/types/canvas"
 import type { CanvasTemplate } from "@/components/editor/starter-templates"
 import "@xyflow/react/dist/style.css"
@@ -51,8 +57,16 @@ const edgeTypes = {
 let nodeCounter = 0
 
 interface CanvasEditorProps {
+  projectId: string
   pendingTemplate: CanvasTemplate | null
   onTemplateImported: () => void
+  onSaveControlsChange: (controls: CanvasSaveControls) => void
+  onAiStatus: (status: Liveblocks["RoomEvent"]) => void
+}
+
+export interface CanvasSaveControls {
+  status: CanvasSaveStatus
+  saveNow: () => void
 }
 
 function isShapeDragPayload(value: unknown): value is ShapeDragPayload {
@@ -92,9 +106,42 @@ function cloneTemplateEdge(edge: CanvasEdge): CanvasEdge {
   }
 }
 
+function isCanvasSnapshot(value: unknown): value is CanvasSnapshot {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Array.isArray((value as Record<string, unknown>).nodes) &&
+    Array.isArray((value as Record<string, unknown>).edges)
+  )
+}
+
+function cloneSavedNode(node: CanvasNode): CanvasNode {
+  return {
+    ...node,
+    position: { ...node.position },
+    data: { ...node.data },
+  }
+}
+
+function cloneSavedEdge(edge: CanvasEdge): CanvasEdge {
+  return {
+    ...edge,
+    data: edge.data ? { ...edge.data } : undefined,
+    markerEnd:
+      typeof edge.markerEnd === "object" && edge.markerEnd
+        ? { ...edge.markerEnd }
+        : edge.markerEnd,
+    style: edge.style ? { ...edge.style } : undefined,
+  }
+}
+
 export function CanvasEditor({
+  projectId,
   pendingTemplate,
   onTemplateImported,
+  onSaveControlsChange,
+  onAiStatus,
 }: CanvasEditorProps) {
   const {
     fitView,
@@ -117,6 +164,94 @@ export function CanvasEditor({
       initial: [],
     },
   })
+  const { saveNow, status: saveStatus } = useCanvasAutosave({
+    projectId,
+    nodes,
+    edges,
+  })
+  const hasAttemptedLoadRef = useRef(false)
+  const latestNodesRef = useRef(nodes)
+  const latestEdgesRef = useRef(edges)
+
+  useEventListener(({ event }) => {
+    if (event.type === "ai-status") {
+      onAiStatus(event)
+    }
+  })
+
+  useEffect(() => {
+    latestNodesRef.current = nodes
+    latestEdgesRef.current = edges
+  }, [edges, nodes])
+
+  useEffect(() => {
+    onSaveControlsChange({
+      status: saveStatus,
+      saveNow: () => {
+        void saveNow()
+      },
+    })
+  }, [onSaveControlsChange, saveNow, saveStatus])
+
+  useEffect(() => {
+    if (hasAttemptedLoadRef.current || nodes.length > 0 || edges.length > 0) {
+      return
+    }
+
+    hasAttemptedLoadRef.current = true
+    const controller = new AbortController()
+
+    void fetch(`/api/projects/${projectId}/canvas`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          return null
+        }
+
+        const savedCanvas: unknown = await response.json()
+
+        if (!isCanvasSnapshot(savedCanvas)) {
+          return null
+        }
+
+        return savedCanvas
+      })
+      .then((savedCanvas) => {
+        if (
+          !savedCanvas ||
+          (savedCanvas.nodes.length === 0 && savedCanvas.edges.length === 0) ||
+          latestNodesRef.current.length > 0 ||
+          latestEdgesRef.current.length > 0
+        ) {
+          return
+        }
+
+        onNodesChange(
+          savedCanvas.nodes.map((node) => ({
+            type: "add",
+            item: cloneSavedNode(node),
+          }))
+        )
+        onEdgesChange(
+          savedCanvas.edges.map((edge) => ({
+            type: "add",
+            item: cloneSavedEdge(edge),
+          }))
+        )
+
+        window.requestAnimationFrame(() => {
+          fitView({ padding: 0.2, duration: 300 })
+        })
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return
+        }
+      })
+
+    return () => controller.abort()
+  }, [edges.length, fitView, nodes.length, onEdgesChange, onNodesChange, projectId])
 
   useEffect(() => {
     if (!pendingTemplate) {

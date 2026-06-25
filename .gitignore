@@ -19,10 +19,12 @@
 
 # production
 /build
+/.trigger/tmp/
 
 # misc
 .DS_Store
 *.pem
+/.local/
 
 # debug
 npm-debug.log*

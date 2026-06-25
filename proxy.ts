@@ -19,8 +19,11 @@ const isPublicRoute = createRouteMatcher([
   ),
 ]);
 
+const isProjectApiRoute = createRouteMatcher(["/api/projects(.*)"]);
+const isAiApiRoute = createRouteMatcher(["/api/ai(.*)"]);
+
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  if (!isPublicRoute(request) && !isProjectApiRoute(request) && !isAiApiRoute(request)) {
     await auth.protect();
   }
 });

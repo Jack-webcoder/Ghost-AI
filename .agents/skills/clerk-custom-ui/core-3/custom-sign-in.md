@@ -186,10 +186,48 @@ From [the docs](https://clerk.com/docs/guides/development/custom-flows/authentic
 
 import { useSignIn } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+type SecondFactorStrategy =
+  | 'phone_code'
+  | 'email_code'
+  | 'email_link'
+  | 'totp'
+  | 'backup_code'
 
 export default function Page() {
   const { signIn, errors, fetchStatus } = useSignIn()
   const router = useRouter()
+  const [selectedSecondFactor, setSelectedSecondFactor] =
+    useState<SecondFactorStrategy | null>(null)
+
+  const prepareSecondFactor = async () => {
+    const factor = signIn.supportedSecondFactors[0]
+    if (!factor) {
+      throw new Error('No supported second factor is available.')
+    }
+
+    setSelectedSecondFactor(factor.strategy)
+
+    switch (factor.strategy) {
+      case 'phone_code':
+        await signIn.mfa.sendPhoneCode()
+        break
+      case 'email_code':
+        await signIn.mfa.sendEmailCode()
+        break
+      case 'email_link':
+        await signIn.emailLink.sendLink({
+          emailAddressId: factor.emailAddressId,
+          verificationUrl: window.location.href,
+        })
+        break
+      case 'totp':
+      case 'backup_code':
+        // These strategies do not require a code to be sent.
+        break
+    }
+  }
 
   const handleSubmit = async (formData: FormData) => {
     const emailAddress = formData.get('email') as string
@@ -200,9 +238,12 @@ export default function Page() {
       password,
     })
 
-    // If you're using the authenticator app strategy, remove this check.
+    if (signIn.status === 'needs_client_trust') {
+      await prepareSecondFactor()
+    }
+
     if (signIn.status === 'needs_second_factor') {
-      await signIn.mfa.sendPhoneCode()
+      await prepareSecondFactor()
     }
 
     if (signIn.status === 'complete') {
@@ -228,14 +269,22 @@ export default function Page() {
 
   const handleMFAVerification = async (formData: FormData) => {
     const code = formData.get('code') as string
-    const useBackupCode = formData.get('useBackupCode') === 'on'
 
-    if (useBackupCode) {
-      await signIn.mfa.verifyBackupCode({ code })
-    } else {
-      await signIn.mfa.verifyPhoneCode({ code })
-      // If you're using the authenticator app strategy, use the following method instead:
-      // await signIn.mfa.verifyTOTP({ code })
+    switch (selectedSecondFactor) {
+      case 'phone_code':
+        await signIn.mfa.verifyPhoneCode({ code })
+        break
+      case 'email_code':
+        await signIn.mfa.verifyEmailCode({ code })
+        break
+      case 'totp':
+        await signIn.mfa.verifyTOTP({ code })
+        break
+      case 'backup_code':
+        await signIn.mfa.verifyBackupCode({ code })
+        break
+      default:
+        return
     }
 
     if (signIn.status === 'complete') {
@@ -259,7 +308,18 @@ export default function Page() {
     }
   }
 
-  if (signIn.status === 'needs_second_factor') {
+  if (
+    (signIn.status === 'needs_client_trust' ||
+      signIn.status === 'needs_second_factor') &&
+    selectedSecondFactor === 'email_link'
+  ) {
+    return <p>Check your email to continue signing in.</p>
+  }
+
+  if (
+    signIn.status === 'needs_client_trust' ||
+    signIn.status === 'needs_second_factor'
+  ) {
     return (
       <div>
         <h1>Verify your account</h1>
@@ -268,12 +328,6 @@ export default function Page() {
             <label htmlFor="code">Code</label>
             <input id="code" name="code" type="text" />
             {errors.fields.code && <p>{errors.fields.code.message}</p>}
-          </div>
-          <div>
-            <label>
-              Use backup code
-              <input type="checkbox" name="useBackupCode" />
-            </label>
           </div>
           <button type="submit" disabled={fetchStatus === 'fetching'}>
             Verify

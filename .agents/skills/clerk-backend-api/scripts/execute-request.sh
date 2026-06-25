@@ -75,6 +75,9 @@ BASE_URL="${CLERK_REST_API_URL:-https://api.clerk.com}"
 # Build curl command
 CURL_ARGS=(
   -s
+  --fail-with-body
+  --connect-timeout 10
+  --max-time 60
   -X "$METHOD_UPPER"
   "${BASE_URL}/v1${PATH_ARG}"
   -H "Authorization: Bearer ${CLERK_SECRET_KEY:?CLERK_SECRET_KEY is not set}"

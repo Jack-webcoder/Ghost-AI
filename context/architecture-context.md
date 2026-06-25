@@ -25,6 +25,7 @@
 
 - **Database**: metadata, ownership, relationships, and task run records.
 - **Vercel Blob**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at `specs/{projectId}/{specId}.md`.
+- **Local development fallback**: when `BLOB_READ_WRITE_TOKEN` is not configured, canvas snapshots are written to ignored `.local/canvas/{projectId}.json` files so autosave remains testable without cloud storage.
 - Project records, spec records, and task run records belong in PostgreSQL.
 - Canvas content and Markdown output are stored in and retrieved from Vercel Blob.
 - The blob URL is stored in the database (`canvasJsonPath`, `filePath`) as the reference to the artifact.
